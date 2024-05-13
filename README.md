@@ -1,16 +1,15 @@
-# forge
+# Forge Note Editor
 
-A new Flutter project.
+## THIS PROJECT IS UNDER DEVELOPMENT!!
 
-## Getting Started
+Forge Note Editor is intended to be an open source replacment to Onenote which works on all platforms and is fully featured
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Future Update plans
+* Saving pages to notebooks
+* Saving notebooks localy
+* Saving notebooks remotley
+* Better text suport
+    * Bold, italics, fonts, etc.
+* Insert images into pages
+* Inking suport
+* Insert and Edit complex maths equations
