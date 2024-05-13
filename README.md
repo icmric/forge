@@ -1,10 +1,10 @@
 # Forge Note Editor
 
-## THIS PROJECT IS UNDER DEVELOPMENT!!
+## THIS PROJECT IS UNDER DEVELOPMENT AND IS NOT READY FOR USE!!
 
 Forge Note Editor is intended to be an open source replacment to Onenote which works on all platforms and is fully featured
 
-# Future Update plans
+### Future Update plans
 * Saving pages to notebooks
 * Saving notebooks localy
 * Saving notebooks remotley

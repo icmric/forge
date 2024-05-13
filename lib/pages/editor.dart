@@ -27,19 +27,20 @@ class _EditorPageState extends State<EditorPage> {
           saveNote(newValue);
         },
       ),
-      //ListView(
-      //  children: content.map((item) => Text(item)).toList(),
-      //),
     );
   }
 
   // Make this not async and more generic
   // Add another function that calls this which is async, must save last edit too
   // this might work for a full note when images and drawing is included?
+  //TODO: Delayed saving dosent work as intended, isnt saving the final version, does update a bit though
   Future<void> saveNote(String update) async {
     if (isSaving) {
       print("Already Saving");
-      return;
+      await Future.delayed(const Duration(seconds: 1));
+      if (isSaving) {
+        return;
+      }
     }
 
     isSaving = true;
