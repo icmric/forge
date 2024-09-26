@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:forge/infinite_canvas.dart';
-
-import 'src/presentation/widgets/actions.dart';
-//import 'package:infinite_canvas/infinite_canvas.dart';
-
-//import 'canvas/infinite_canvas.dart';
+import 'package:random_color/random_color.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 
 void main() => runApp(const MyApp());
 
@@ -31,226 +28,61 @@ class Example extends StatefulWidget {
 }
 
 class _ExampleState extends State<Example> {
-  late InfiniteCanvasController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    final rectangleNode = InfiniteCanvasNode(
-      key: UniqueKey(),
-      label: 'Rectangle',
-      offset: const Offset(400, 300),
-      size: const Size(200, 200),
-      child: Builder(
-        builder: (context) {
-          return CustomPaint(
-            isComplex: true,
-            willChange: true,
-            painter: InlineCustomPainter(
-              brush: Paint(),
-              builder: (brush, canvas, rect) {
-                // Draw rect
-                brush.color = Theme.of(context).colorScheme.secondary;
-                canvas.drawRect(rect, brush);
-              },
-            ),
-          );
-        },
-      ),
-    );
-    final triangleNode = InfiniteCanvasNode(
-      key: UniqueKey(),
-      label: 'Triangle',
-      offset: const Offset(550, 300),
-      size: const Size(200, 200),
-      child: Builder(
-        builder: (context) {
-          return CustomPaint(
-            painter: InlineCustomPainter(
-              brush: Paint(),
-              builder: (brush, canvas, rect) {
-                // Draw triangle
-                brush.color = Theme.of(context).colorScheme.secondaryContainer;
-                final path = Path();
-                path.addPolygon([
-                  rect.topCenter,
-                  rect.bottomLeft,
-                  rect.bottomRight,
-                ], true);
-                canvas.drawPath(path, brush);
-              },
-            ),
-          );
-        },
-      ),
-    );
-    final testNote = InfiniteCanvasNode(
-      key: UniqueKey(),
-      label: 'Note',
-      offset: const Offset(500, 150),
-      size: const Size(200, 200),
-      child: Builder(
-        builder: (context) {
-          return CustomPaint(
-            painter: InlineCustomPainter(
-              brush: Paint(),
-              builder: (brush, canvas, rect) {
-                // Draw note
-                brush.color = Theme.of(context).colorScheme.secondaryContainer;
-                final path = Path();
-                path.addRRect(RRect.fromLTRBR(
-                  rect.left,
-                  rect.top,
-                  rect.right,
-                  rect.bottom,
-                  const Radius.circular(10),
-                ));
-                canvas.drawPath(path, brush);
-              },
-            ),
-          );
-        },
-      ),
-    );
-    final circleNode = InfiniteCanvasNode(
-      key: UniqueKey(),
-      label: 'Circle',
-      offset: const Offset(500, 450),
-      size: const Size(200, 200),
-      child: Builder(
-        builder: (context) {
-          return CustomPaint(
-            painter: InlineCustomPainter(
-              brush: Paint(),
-              builder: (brush, canvas, rect) {
-                // Draw circle
-                brush.color = Theme.of(context).colorScheme.tertiary;
-                canvas.drawCircle(rect.center, rect.width / 2, brush);
-              },
-            ),
-          );
-        },
-      ),
-    );
-    //var textNode = ;
-    var objSet = InfiniteCanvasNode(
-        key: UniqueKey(),
-        label: 'Text',
-        offset: const Offset(500, 450),
-        size: const Size(200, 200),
-        resizeMode: ResizeMode.corners,
-        content: 'Edit Me!',
-        child: Builder(
-          builder: (context) {
-            String text = 'Test';
-            return GestureDetector(
-              onTap: () {
-                final item = controller.selection.first;
-                controller.focusNode.unfocus();
-                prompt(
-                  context,
-                  title: 'Rename child',
-                  value: item.label,
-                ).then((value) {
-                  controller.focusNode.requestFocus();
-                  if (value == null) return;
-                  item.update(label: value);
-                  controller.editText(value, item);
-                  item.content = value;
-                  text = value;
-                });
-              },
-              child: CustomPaint(
-                willChange: true,
-                painter: InlineCustomPainter(
-                  brush: Paint(),
-                  builder: (brush, canvas, rect) {
-                    // Draw text
-                    brush.color = Theme.of(context).colorScheme.tertiary;
-                    final textStyle = TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 20,
-                    );
-                    final textSpan = TextSpan(
-                      text: text,
-                      style: textStyle,
-                    );
-                    final textPainter = TextPainter(
-                      text: textSpan,
-                      textDirection: TextDirection.ltr,
-                      textAlign: TextAlign.center,
-                    );
-                    textPainter.layout();
-                    textPainter.paint(
-                      canvas,
-                      rect.center - textPainter.size.center(Offset.zero),
-                    );
-                  },
-                ),
-              ),
-            );
-          },
-        ));
-    final nodes = [
-      rectangleNode,
-      triangleNode,
-      circleNode,
-      testNote,
-      objSet,
-    ];
-    controller = InfiniteCanvasController(nodes: nodes, edges: [
-      InfiniteCanvasEdge(
-        from: rectangleNode.key,
-        to: triangleNode.key,
-        label: '4 -> 3',
-      ),
-      InfiniteCanvasEdge(
-        from: rectangleNode.key,
-        to: circleNode.key,
-        label: '[] -> ()',
-      ),
-      InfiniteCanvasEdge(
-        from: triangleNode.key,
-        to: circleNode.key,
-      ),
-    ]);
-  }
+  final List<InfiniteCanvasNode> _nodes = [];
+  final GlobalKey _canvasKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Infinite Canvas Example'),
-        centerTitle: false,
-      ),
-      body: InfiniteCanvas(
-        controller: controller,
+      appBar: AppBar(title: const Text('Infinite Canvas Example')),
+      body: GestureDetector(
+        onTapDown: (details) {
+          // 1. Get RenderBox of InfiniteCanvas:
+          final RenderBox canvasRenderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+
+          // 2. Get size of options bar (you might need to adjust this):
+          final double optionsBarHeight = AppBar().preferredSize.height; // Assuming options bar has same height as AppBar
+
+          // 3. Adjust click offset to exclude options bar:
+          Offset adjustedOffset = details.localPosition;
+          adjustedOffset = Offset(
+            adjustedOffset.dx,
+            adjustedOffset.dy - optionsBarHeight * 1.7,
+          );
+
+          // 4. Convert to global coordinates:
+          final Offset globalOffset = canvasRenderBox.localToGlobal(adjustedOffset);
+
+          _addSquareNode(globalOffset);
+        },
+        child: InfiniteCanvas(
+          key: _canvasKey,
+          controller: InfiniteCanvasController(
+            nodes: _nodes,
+            edges: [],
+          ),
+        ),
       ),
     );
   }
-}
 
-class InlineCustomPainter extends CustomPainter {
-  const InlineCustomPainter({
-    required this.brush,
-    required this.builder,
-    this.isAntiAlias = true,
-  });
-  final Paint brush;
-  final bool isAntiAlias;
-  final void Function(Paint paint, Canvas canvas, Rect rect) builder;
+  void _addSquareNode(Offset offset) {
+    final key = UniqueKey();
+    final squareSize = 50.0;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    brush.isAntiAlias = isAntiAlias;
-    canvas.save();
-    builder(brush, canvas, rect);
-    canvas.restore();
-  }
+    final Offset adjustedOffset = Offset(squareSize / 2, squareSize / 2);
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+    setState(() {
+      _nodes.add(
+        InfiniteCanvasNode(
+          key: key,
+          offset: offset - adjustedOffset,
+          size: Size(squareSize, squareSize),
+          child: Container(
+            color: RandomColor().randomColor(),
+          ),
+        ),
+      );
+    });
   }
 }

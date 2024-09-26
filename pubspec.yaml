@@ -38,6 +38,8 @@ dependencies:
   flutter_drawing_board: ^0.7.0+2
   collection: ^1.18.0
   directed_graph: ^0.4.3
+  random_color: ^1.0.6-nullsafety
+  vector_math: ^2.1.4
 
 dev_dependencies:
   flutter_test:
