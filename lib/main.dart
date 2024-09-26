@@ -1,115 +1,256 @@
 import 'package:flutter/material.dart';
-import 'package:forge/data/definition.dart';
-import 'package:forge/pages/editor.dart';
+import 'package:forge/infinite_canvas.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'src/presentation/widgets/actions.dart';
+//import 'package:infinite_canvas/infinite_canvas.dart';
+
+//import 'canvas/infinite_canvas.dart';
+
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    Note note = Note(
-      title: "Test Page",
-      content: ["This is the content of the test note. it even contains sentences!", "This is the second paragraph."],
-    );
     return MaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        initialRoute: '/',
-        routes: {
-          '/': (context) => EditorPage(
-                currentNote: note,
-              ),
-          // '/editor': (context) => NoteEditingPage(page: NotePage(title: "Blank Page")),
-        }
-
-        //const MyHomePage(title: 'Flutter Demo Home Page'),
-        );
+      debugShowCheckedModeBanner: false,
+      home: const Example(),
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: ThemeMode.system,
+    );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class Example extends StatefulWidget {
+  const Example({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<Example> createState() => _ExampleState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ExampleState extends State<Example> {
+  late InfiniteCanvasController controller;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    final rectangleNode = InfiniteCanvasNode(
+      key: UniqueKey(),
+      label: 'Rectangle',
+      offset: const Offset(400, 300),
+      size: const Size(200, 200),
+      child: Builder(
+        builder: (context) {
+          return CustomPaint(
+            isComplex: true,
+            willChange: true,
+            painter: InlineCustomPainter(
+              brush: Paint(),
+              builder: (brush, canvas, rect) {
+                // Draw rect
+                brush.color = Theme.of(context).colorScheme.secondary;
+                canvas.drawRect(rect, brush);
+              },
+            ),
+          );
+        },
+      ),
+    );
+    final triangleNode = InfiniteCanvasNode(
+      key: UniqueKey(),
+      label: 'Triangle',
+      offset: const Offset(550, 300),
+      size: const Size(200, 200),
+      child: Builder(
+        builder: (context) {
+          return CustomPaint(
+            painter: InlineCustomPainter(
+              brush: Paint(),
+              builder: (brush, canvas, rect) {
+                // Draw triangle
+                brush.color = Theme.of(context).colorScheme.secondaryContainer;
+                final path = Path();
+                path.addPolygon([
+                  rect.topCenter,
+                  rect.bottomLeft,
+                  rect.bottomRight,
+                ], true);
+                canvas.drawPath(path, brush);
+              },
+            ),
+          );
+        },
+      ),
+    );
+    final testNote = InfiniteCanvasNode(
+      key: UniqueKey(),
+      label: 'Note',
+      offset: const Offset(500, 150),
+      size: const Size(200, 200),
+      child: Builder(
+        builder: (context) {
+          return CustomPaint(
+            painter: InlineCustomPainter(
+              brush: Paint(),
+              builder: (brush, canvas, rect) {
+                // Draw note
+                brush.color = Theme.of(context).colorScheme.secondaryContainer;
+                final path = Path();
+                path.addRRect(RRect.fromLTRBR(
+                  rect.left,
+                  rect.top,
+                  rect.right,
+                  rect.bottom,
+                  const Radius.circular(10),
+                ));
+                canvas.drawPath(path, brush);
+              },
+            ),
+          );
+        },
+      ),
+    );
+    final circleNode = InfiniteCanvasNode(
+      key: UniqueKey(),
+      label: 'Circle',
+      offset: const Offset(500, 450),
+      size: const Size(200, 200),
+      child: Builder(
+        builder: (context) {
+          return CustomPaint(
+            painter: InlineCustomPainter(
+              brush: Paint(),
+              builder: (brush, canvas, rect) {
+                // Draw circle
+                brush.color = Theme.of(context).colorScheme.tertiary;
+                canvas.drawCircle(rect.center, rect.width / 2, brush);
+              },
+            ),
+          );
+        },
+      ),
+    );
+    //var textNode = ;
+    var objSet = InfiniteCanvasNode(
+        key: UniqueKey(),
+        label: 'Text',
+        offset: const Offset(500, 450),
+        size: const Size(200, 200),
+        resizeMode: ResizeMode.corners,
+        content: 'Edit Me!',
+        child: Builder(
+          builder: (context) {
+            String text = 'Test';
+            return GestureDetector(
+              onTap: () {
+                final item = controller.selection.first;
+                controller.focusNode.unfocus();
+                prompt(
+                  context,
+                  title: 'Rename child',
+                  value: item.label,
+                ).then((value) {
+                  controller.focusNode.requestFocus();
+                  if (value == null) return;
+                  item.update(label: value);
+                  controller.editText(value, item);
+                  item.content = value;
+                  text = value;
+                });
+              },
+              child: CustomPaint(
+                willChange: true,
+                painter: InlineCustomPainter(
+                  brush: Paint(),
+                  builder: (brush, canvas, rect) {
+                    // Draw text
+                    brush.color = Theme.of(context).colorScheme.tertiary;
+                    final textStyle = TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 20,
+                    );
+                    final textSpan = TextSpan(
+                      text: text,
+                      style: textStyle,
+                    );
+                    final textPainter = TextPainter(
+                      text: textSpan,
+                      textDirection: TextDirection.ltr,
+                      textAlign: TextAlign.center,
+                    );
+                    textPainter.layout();
+                    textPainter.paint(
+                      canvas,
+                      rect.center - textPainter.size.center(Offset.zero),
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        ));
+    final nodes = [
+      rectangleNode,
+      triangleNode,
+      circleNode,
+      testNote,
+      objSet,
+    ];
+    controller = InfiniteCanvasController(nodes: nodes, edges: [
+      InfiniteCanvasEdge(
+        from: rectangleNode.key,
+        to: triangleNode.key,
+        label: '4 -> 3',
+      ),
+      InfiniteCanvasEdge(
+        from: rectangleNode.key,
+        to: circleNode.key,
+        label: '[] -> ()',
+      ),
+      InfiniteCanvasEdge(
+        from: triangleNode.key,
+        to: circleNode.key,
+      ),
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Infinite Canvas Example'),
+        centerTitle: false,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+      body: InfiniteCanvas(
+        controller: controller,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+}
+
+class InlineCustomPainter extends CustomPainter {
+  const InlineCustomPainter({
+    required this.brush,
+    required this.builder,
+    this.isAntiAlias = true,
+  });
+  final Paint brush;
+  final bool isAntiAlias;
+  final void Function(Paint paint, Canvas canvas, Rect rect) builder;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    brush.isAntiAlias = isAntiAlias;
+    canvas.save();
+    builder(brush, canvas, rect);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
   }
 }
